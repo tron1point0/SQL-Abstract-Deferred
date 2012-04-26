@@ -30,8 +30,9 @@ use v5.14;
 use warnings;
 use lib './lib';
 use SQL::Abstract::Builder qw(query build include);
-
 use Data::Dump qw(pp);
+
+use Test::More tests => 1;
 
 my @res = query {'dbi:mysql:test','root'} build {
     Table1::query -key => 'id', -limit => 100,
@@ -41,4 +42,4 @@ my @res = query {'dbi:mysql:test','root'} build {
     Table3::query -key => 'table1_id',
 };
 
-say pp \@res;
+ok(@res);
