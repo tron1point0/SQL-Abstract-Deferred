@@ -1,19 +1,46 @@
 #!/usr/bin/env perl
 
-use v5.14;
-use warnings;
-use lib '.';
-use Deferred;
+package Table1;
 
-my ($q,@bind) = Deferred::base {
+sub query {
     -columns => [qw(id foo bar)],
     -from => 'table1',
-    -where => {foo => '1'},
-} Deferred::include {
-    -columns => [qw(id baz glarch)],
-    -from => [qw(=>{table1.id=table2.table1_id} table2)],
-    -where => {'table1.id' => 'table2.table1_id'},
-} -limit => 100;
+    (@_ == 1 ? (-where => $_[0]) : @_),
+}
 
-say $q;
-say join ',',@bind;
+package Table2;
+
+sub query {
+    -columns => [qw(id baz glarch)],
+    -from => 'table2',
+    (@_ == 1 ? (-where => $_[0]) : @_),
+}
+
+package Table3;
+
+sub query {
+    -columns => [qw(id alfa)],
+    -from => 'table3',
+    (@_ == 1 ? (-where => $_[0]) : @_),
+}
+
+package main;
+
+use v5.14;
+use warnings;
+use lib './lib';
+use SQL::Abstract::Deferred qw(query base include);
+
+use Data::Dump qw(pp);
+
+my @qs = base {
+    Table1::query -where => {foo => 't1.foo1'}, -key => 'id', -limit => 100,
+} include {
+    Table2::query -key => 'table1_id',
+} include {
+    Table3::query -key => 'table1_id',
+};
+
+my @res = query {'dbi:mysql:test','root'} @qs;
+
+say pp \@res;
