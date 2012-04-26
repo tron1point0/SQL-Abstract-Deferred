@@ -79,3 +79,58 @@ sub include (&;@) {
 }
 
 1;
+
+__END__
+=head1 NAME
+
+SQL::Abstract::Builder - Builds and executers relational queries
+
+=head1 SYNOPSIS
+
+    my @docs = query {"dbi:mysql:$db",$user} build {
+        -columns => [qw(id foo bar)],
+        -from => 'table1',
+        -key => 'id',
+    } include {
+        -columns => [qw(id baz glarch)],
+        -from => 'table2',
+        -key => 'table1_id',
+    } include {
+        -columns => [qw(id alfa)],
+        -from => 'table3',
+        -key => 'table1_id',
+    };
+
+=head1 DESCRIPTION
+
+It gives you a very simple way to define fetch documents (rows and related
+children) from your relational DB (instead of just rows).
+
+=head1 METHODS
+
+=head2 query
+
+Executes the built query. Takes either a L<DBIx::Simple> connection or the same
+arguments that are valid for C<DBIx::Simple->connect>.
+
+=head3 Usage
+
+    my @docs = query {"dbi:mysql:$db",$user} ...
+    # OR
+    my @docs = query {$dbh} ...
+
+=head2 build
+
+Builds the query assuming the given table is the base.
+
+=head3 Usage
+
+    my @refs = build { ... } ...
+
+=head2 include
+
+Includes the results of a C<JOIN> on the given table when built.
+
+=head3 Usage
+
+    my @refs = build { ... } include { ... }
