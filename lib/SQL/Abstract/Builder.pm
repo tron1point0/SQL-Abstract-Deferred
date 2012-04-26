@@ -10,6 +10,9 @@ Hash::Merge::set_behavior('RETAINMENT_PRECEDENT');
 use Exporter qw(import);
 our @EXPORT_OK = qw(query build include);
 
+# ABSTRACT: Quickly build & query relational data
+# VERSION
+
 sub refp {
     return unless defined $_[0];
     return @{$_[0]} if ref $_[0] eq ref [];
