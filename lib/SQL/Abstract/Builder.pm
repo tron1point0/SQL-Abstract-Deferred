@@ -1,4 +1,4 @@
-package SQL::Abstract::Deferred;
+package SQL::Abstract::Builder;
 
 use v5.14;
 use DBIx::Simple;
@@ -8,9 +8,7 @@ use Hash::Merge qw(merge);
 Hash::Merge::set_behavior('RETAINMENT_PRECEDENT');
 
 use Exporter qw(import);
-our @EXPORT_OK = qw(query base include);
-
-use Data::Dump qw(pp);
+our @EXPORT_OK = qw(query build include);
 
 sub refp {
     return unless defined $_[0];
@@ -28,14 +26,27 @@ sub rollup {
     %row;
 }
 
+sub smerge {
+    my ($a,$b) = @_;
+    for (keys $b) {
+        $a->{$_} = $b->{$_} unless defined $a->{$_};
+        next if $a->{$_} eq $b->{$_};
+        $a->{$_} = [refp $a->{$_}] unless ref $a->{$_} eq ref [];
+        push @{$a->{$_}}, refp $b->{$_};
+    }
+    return $a;
+}
+
 sub query (&;@) {
     my @db = (shift)->();
     my $dbh = ref $db[0] eq 'DBIx::Simple' ? $db[0] : DBIx::Simple->connect(@db);
-    map {{rollup %$_}}
-    map {$dbh->query($_->())->hashes} @_;
+    my ($key,%row);
+    $row{$_->{$key}} = smerge $row{$_->{$key}}, $_ for map {{rollup %$_}}
+    map {my @q;($key,@q) = $_->(); $dbh->query(@q)->hashes} @_;
+    values %row;
 }
 
-sub base (&;@) {
+sub build (&;@) {
     my ($fn,@includes) = @_;
     my %params = $fn->();
     my $table = $params{'-from'};
@@ -47,7 +58,7 @@ sub base (&;@) {
         $p{'-from'} = [-join =>
             map {ref $_ eq ref sub {} ? ($_->($table,$key)) : $_ } refp $p{'-from'}
         ];
-        sub {$a->select(%p)};
+        sub {$key, $a->select(%p)};
     } @includes;
 }
 

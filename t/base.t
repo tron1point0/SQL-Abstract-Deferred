@@ -29,18 +29,16 @@ package main;
 use v5.14;
 use warnings;
 use lib './lib';
-use SQL::Abstract::Deferred qw(query base include);
+use SQL::Abstract::Builder qw(query build include);
 
 use Data::Dump qw(pp);
 
-my @qs = base {
-    Table1::query -where => {foo => 't1.foo1'}, -key => 'id', -limit => 100,
+my @res = query {'dbi:mysql:test','root'} build {
+    Table1::query -key => 'id', -limit => 100,
 } include {
     Table2::query -key => 'table1_id',
 } include {
     Table3::query -key => 'table1_id',
 };
-
-my @res = query {'dbi:mysql:test','root'} @qs;
 
 say pp \@res;
